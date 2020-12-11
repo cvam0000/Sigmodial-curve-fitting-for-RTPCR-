@@ -335,6 +335,10 @@ if __name__ == "__main__":
 
     #y_fit = method_function_pair(y_sub_raw, x1, methods)
     y_fit = method_function_pair(y_sub_raw, x1) 
+
+    #if y_fit == None:
+    #    y_fit = smoothen(x1, y1)
+
     # Keeping raw data for plotting with data
     line_raw = np.array(line_raw)
 
