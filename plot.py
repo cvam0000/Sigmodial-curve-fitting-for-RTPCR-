@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 
 from scipy.optimize import curve_fit
 from scipy.stats import chisquare
+from scipy import interpolate
 
 from scipy import stats
 
@@ -174,6 +175,12 @@ def calculate_chi_square(y_obs, y_exp):
     # Return p-value
     return (chisquare(f_obs=y_obs, f_exp=y_exp, ddof=(len(y_obs) - 3))[1])
 
+def smoothen(x_arr, y_arr):
+    x_smooth = np.linspace(x_arr.min(), x_arr.max(), len(x_arr))
+    a_BSpline = interpolate.make_interp_spline(x_arr, y_arr)
+    y_smooth = a_BSpline(x_smooth)
+    return (x_smooth, y_smooth)
+
 
 def method_function_pair(y_arr, x_arr, *args, **kwargs):
     """
@@ -210,7 +217,7 @@ def method_function_pair(y_arr, x_arr, *args, **kwargs):
     try:
         popt_all[1], pcov = curve_fit(lamp_sigmoid, x_arr, y_arr, p_sigmoid, method='trf', maxfev=1200)
         y_fit_all[1] = lamp_sigmoid(x_arr, *popt_all[1])
-        chi_squares[1] = calculate_chi_square(y_arr, y_fit[1])
+        chi_squares[1] = calculate_chi_square(y_arr, y_fit_all[1])
     except:
         pass
 
@@ -241,13 +248,25 @@ def method_function_pair(y_arr, x_arr, *args, **kwargs):
     if args:
         method_flag = args[0][0]
 
-    #print("Method selected: ", method_flag)
-    #print("Popt for optimized: ", popt_all[method_flag])
+    print("Method selected: ", method_flag)
+    print("Popt for optimized: ", popt_all[method_flag])
     #print("y_fit_all: ", y_fit_all[method_flag])
     #print("y_fit_all len: ", len(y_fit_all[method_flag]))
 
+    #print(type(list(popt_all[method_flag])))
+
     # return the index of the max value in chi_squares
+    try:
+        if type(list(popt_all[method_flag])) != type([]):
+            return (y_fit_all[method_flag])
+    except:
+        return (smoothen(x_arr, y_arr)[1])
+
     return (y_fit_all[method_flag])
+
+def analyze_data():
+    # Main function to call everything
+    pass
 
 #def curve_fit_method_selector(i)
 #    switcher = {
@@ -314,10 +333,13 @@ if __name__ == "__main__":
 
     y_sub_raw[:start_point] = 0
 
-    y_fit = method_function_pair(y_sub_raw, x1, methods)
-
+    #y_fit = method_function_pair(y_sub_raw, x1, methods)
+    y_fit = method_function_pair(y_sub_raw, x1) 
     # Keeping raw data for plotting with data
     line_raw = np.array(line_raw)
+
+    print("Y fit: ", y_fit)
+    print("x: ", x1)
 
     plt.plot(x1, y_sub_raw, 'o', label='Raw Data and Subtracted')
     plt.plot(x1, y_fit, label="Curve Fitted on Baseline Subtracted")
@@ -334,8 +356,8 @@ if __name__ == "__main__":
     print("Ct from raw and subtracted: ", cycle_threshold_value(y_sub_raw, x1))
     print("Ct from fitted: ", cycle_threshold_value(y_fit, x1))
 
-    plt.show()
-    #plt.savefig(f'{sys.argv[1]}.png')
+    #plt.show()
+    plt.savefig(f'{sys.argv[1]}.png')
 
     #plt.plot(x1, y_2derivative, label="Second Order Derivative")
     #plt.plot(x1, y_2der_fitted, label="Second Order Derivative of fitted graph")
